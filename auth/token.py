@@ -1,14 +1,9 @@
 from datetime import timedelta, datetime
 from jose import JWTError, jwt
 from fastapi import HTTPException
+
 from schemas.JWTtoken import TokenData
-from decouple import config
-
-
-SECRET_KEY = config('SECRET_KEY')
-ALGORITHM = config('ALGORITHM')
-ACCESS_TOKEN_EXPIRE_MINUTES = config('ACCESS_TOKEN_EXPIRE_MINUTES')
-
+from config.auth import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 def create_access_token(data: dict):
