@@ -7,7 +7,7 @@ from config.database import get_db
 from models.Manage_Schedule import Manage_Schedule
 from models.User import User
 from schemas.Manage_Schedule import (ScheduleSchema, BulkScheduleSchema, RoomScheduleSchema, ClassScheduleFilterSchema,
-                                     ScheduleSearchSubjectCode)
+                                     ScheduleSearchSubjectCode, RoomSearch)
 from datetime import datetime, time
 from pydantic import UUID4
 from auth.Oauth2 import get_current_user
@@ -212,6 +212,36 @@ async def bulk_store(request: BulkScheduleSchema, db: Session = Depends(get_db),
 @router.get("/filtersched", response_model=list[ScheduleSchema])
 async def get_curriculums(
         filter_data: ClassScheduleFilterSchema = Depends(ClassScheduleFilterSchema),
+        db: Session = Depends(get_db),
+):
+    filters = filter_data.model_dump(exclude_defaults=True)
+
+    schedules = (
+        db.query(Manage_Schedule)
+        .options(joinedload(Manage_Schedule.room))  # Apply joinedload to eagerly load the 'room'
+        .filter_by(**filters)
+        .all()
+    )
+
+    # Convert UUIDs to strings in the response
+    response_data = [
+        {
+            **schedule.__dict__,
+            "acadyear_id": str(schedule.acadyear_id),
+            "course_id": str(schedule.course_id),
+            "semester_id": str(schedule.semester_id),
+            "class_id": str(schedule.class_id),
+            "room_id": str(schedule.room_id),
+            "room_number": schedule.room.room_number if schedule.room else None,
+        }
+        for schedule in schedules
+    ]
+
+    return response_data
+
+@router.get("/findroom", response_model=list[ScheduleSchema])
+async def get_rooms(
+        filter_data: RoomSearch = Depends(RoomSearch),
         db: Session = Depends(get_db),
 ):
     filters = filter_data.model_dump(exclude_defaults=True)

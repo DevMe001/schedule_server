@@ -65,3 +65,8 @@ class ScheduleSearchSubjectCode(BaseModel):
     acadyear_id: Optional[str]
     semester_id: Optional[str]
     subject_code: Optional[str]
+
+class RoomSearch(BaseModel):
+    acadyear_id: Optional[str]
+    semester_id: Optional[str]
+    room_id: Optional[str]
