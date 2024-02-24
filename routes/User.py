@@ -7,13 +7,15 @@ from schemas.UpdateUser import UpdateUserSchema
 from datetime import datetime
 from pydantic import UUID4
 from hash.Hashing import Hash
+from auth.Oauth2 import get_current_user
 #from passlib.context import CryptContext
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/")
 # for querying all the data from Courses
-async def index(db: Session = Depends(get_db)):
+async def index(db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
     # to query the entire created table from Courses db
     users = db.query(User).filter(User.deleted_at == None).all()
     data = []
@@ -69,7 +71,8 @@ async def store(request: UserSchema, db: Session = Depends(get_db)):
 
 @router.get("/{id}")
 # For ensuring the id when accessed
-async def show(id: UUID4, db: Session = Depends(get_db)):
+async def show(id: UUID4, db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
     user = db.query(User).filter(User.id == id, User.deleted_at == None).first()
 
     if user:
@@ -87,7 +90,8 @@ async def show(id: UUID4, db: Session = Depends(get_db)):
 
 
 @router.put("/{id}")
-async def update(id: UUID4, request: UpdateUserSchema, db: Session = Depends(get_db)):
+async def update(id: UUID4, request: UpdateUserSchema, db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
     user = db.query(User).filter(User.id == id, User.deleted_at == None).first()
 
     if user:
@@ -111,7 +115,8 @@ async def update(id: UUID4, request: UpdateUserSchema, db: Session = Depends(get
 
 
 @router.delete("/{id}")
-async def delete(id: UUID4, db: Session = Depends(get_db)):
+async def delete(id: UUID4, db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
     course = db.query(User).filter(User.id == id, User.deleted_at == None).first()
 
     if course:

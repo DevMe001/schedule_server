@@ -1,5 +1,5 @@
 # models/Curriculum.py
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Time
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Time, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from config.database import Base
@@ -39,3 +39,7 @@ class Manage_Schedule(Base):
     updated_by = Column(UUID(as_uuid=True), nullable=True)
     deleted_at = Column(DateTime, nullable=True)
     deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    __table_args__ = (
+        UniqueConstraint('acadyear_id', 'semester_id', 'day', 'start_time', 'end_time', 'room_id',
+                         name='unique_scheduling_constraint'),
+    )

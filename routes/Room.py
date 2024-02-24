@@ -40,7 +40,8 @@ async def index(page: Optional[int] = 1, limit: Optional[int] = 10, db: Session 
 
 @router.get("/getrooms")
 # for querying all the data from Courses
-async def index(db: Session = Depends(get_db), current_user: UserSchema = Depends(get_current_user)):
+async def index(db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
     # to query the entire created table from Courses db
     rooms = db.query(Room).filter(Room.deleted_at == None).all()
     data = []
@@ -105,7 +106,8 @@ async def store(request: RoomSchema, db: Session = Depends(get_db),
 
 @router.get("/{id}")
 # For ensuring the id when accessed
-async def show(id: UUID4, db: Session = Depends(get_db), current_user: UserSchema = Depends(get_current_user)):
+async def show(id: UUID4, db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
     room = db.query(Room).filter(Room.id == id, Room.deleted_at == None).first()
 
     if room:

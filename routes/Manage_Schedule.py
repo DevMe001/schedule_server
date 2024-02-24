@@ -7,7 +7,7 @@ from config.database import get_db
 from models.Manage_Schedule import Manage_Schedule
 from models.User import User
 from schemas.Manage_Schedule import (ScheduleSchema, BulkScheduleSchema, RoomScheduleSchema, ClassScheduleFilterSchema,
-                                     ScheduleSearchSubjectCode, RoomSearch)
+                                     ScheduleSearchSubjectCode, RoomSearch, roomchartSchema)
 from datetime import datetime, time
 from pydantic import UUID4
 from auth.Oauth2 import get_current_user
@@ -52,7 +52,64 @@ async def index(page: Optional[int] = 1, limit: Optional[int] = 10, db: Session 
         "message": "All schedules fetched successfully",
         "data": data
     }
+@router.get("/getschedules")
+# for querying all the data from Courses
+async def index(db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
+    # to query the entire created table from Courses db
+    schedules = db.query(Manage_Schedule).filter(Manage_Schedule.deleted_at == None).all()
+    data = []
+    if schedules:
+        for schedule in schedules:
+            data.append({
+                "id": schedule.id,
+                "acadyear_id": schedule.acadyear_id,
+                "course_id": schedule.course_id,
+                "semester_id": schedule.semester_id,
+                "class_id": schedule.class_id,
+                "subject_code": schedule.subject_code,
+                "subject_name": schedule.subject_name,
+                "lecture_hours": schedule.lecture_hours,
+                "lab_hours": schedule.lab_hours,
+                "units": schedule.units,
+                "tuition_hours": schedule.tuition_hours,
+                "day": schedule.day,
+                "start_time": schedule.start_time.strftime("%I:%M %p"),
+                "end_time": schedule.end_time.strftime("%I:%M %p"),
+                "room_id": schedule.room_id,
+                "created_at": schedule.created_at,
+                "created_by": schedule.created_by,
+                "updated_at": schedule.updated_at,
+                "updated_by": schedule.updated_by
+            })
+    return {
+        "message": "All schedules fetched successfully",
+        "data": data
+    }
 
+@router.get("/roompiechart", response_model=list[ScheduleSchema])
+async def findroomchart(
+        filter_data: roomchartSchema = Depends(roomchartSchema),
+        db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
+    filters = filter_data.model_dump(exclude_defaults=True)
+
+    schedules = db.query(Manage_Schedule).filter_by(**filters).all()
+
+    # Convert UUIDs to strings in the response
+    response_data = [
+        {
+            **schedule.__dict__,
+            "acadyear_id": str(schedule.acadyear_id),
+            "course_id": str(schedule.course_id),
+            "semester_id": str(schedule.semester_id),
+            "class_id": str(schedule.class_id),
+            "room_id": str(schedule.room_id),
+            "room_number": schedule.room.room_number if schedule.room else None,
+        }
+        for schedule in schedules
+    ]
+    return response_data
 
 @router.post("/post")
 async def store(request: ScheduleSchema, db: Session = Depends(get_db),
@@ -157,7 +214,6 @@ async def bulk_store(request: BulkScheduleSchema, db: Session = Depends(get_db),
 
     try:
         for schedule_data in request.schedules:
-            # Check for conflicting schedules
             conflicting_schedule = db.query(Manage_Schedule).filter(
                 Manage_Schedule.acadyear_id == schedule_data.acadyear_id,
                 Manage_Schedule.semester_id == schedule_data.semester_id,
@@ -165,17 +221,32 @@ async def bulk_store(request: BulkScheduleSchema, db: Session = Depends(get_db),
                 Manage_Schedule.day == schedule_data.day,
                 or_(
                     and_(
-                        Manage_Schedule.start_time < schedule_data.end_time,
-                        Manage_Schedule.end_time > schedule_data.start_time
+                        Manage_Schedule.start_time <= schedule_data.start_time,
+                        Manage_Schedule.end_time >= schedule_data.start_time
                     ),
                     and_(
-                        Manage_Schedule.start_time >= schedule_data.end_time,
-                        Manage_Schedule.end_time <= schedule_data.start_time
+                        Manage_Schedule.start_time <= schedule_data.end_time,
+                        Manage_Schedule.end_time >= schedule_data.end_time
+                    ),
+                    and_(
+                        Manage_Schedule.start_time >= schedule_data.start_time,
+                        Manage_Schedule.end_time <= schedule_data.end_time
                     )
                 )
             ).first()
 
-            if conflicting_schedule:
+            conflicting_request_schedule = any(
+                (existing_schedule for existing_schedule in request.schedules
+                 if existing_schedule != schedule_data and
+                 existing_schedule.day == schedule_data.day and
+                 ((existing_schedule.start_time <= schedule_data.start_time < existing_schedule.end_time) or
+                  (existing_schedule.start_time < schedule_data.end_time <= existing_schedule.end_time) or
+                  (schedule_data.start_time <= existing_schedule.start_time < schedule_data.end_time) or
+                  (schedule_data.start_time < existing_schedule.end_time <= schedule_data.end_time))
+                 )
+            )
+
+            if conflicting_schedule or conflicting_request_schedule:
                 raise HTTPException(status_code=400, detail="Conflicting schedule found.")
 
             # If no conflict, proceed to add the schedule
@@ -213,7 +284,7 @@ async def bulk_store(request: BulkScheduleSchema, db: Session = Depends(get_db),
 async def get_curriculums(
         filter_data: ClassScheduleFilterSchema = Depends(ClassScheduleFilterSchema),
         db: Session = Depends(get_db),
-):
+                current_user: UserSchema = Depends(get_current_user)):
     filters = filter_data.model_dump(exclude_defaults=True)
 
     schedules = (
@@ -243,7 +314,7 @@ async def get_curriculums(
 async def get_rooms(
         filter_data: RoomSearch = Depends(RoomSearch),
         db: Session = Depends(get_db),
-):
+                current_user: UserSchema = Depends(get_current_user)):
     filters = filter_data.model_dump(exclude_defaults=True)
 
     schedules = (
@@ -274,7 +345,7 @@ async def get_rooms(
 async def findroomschedules(
         search_data: RoomScheduleSchema = Depends(RoomScheduleSchema),
         db: Session = Depends(get_db),
-):
+                current_user: UserSchema = Depends(get_current_user)):
     filters = search_data.model_dump(exclude_defaults=True)
 
     # Extract the additional string filter
@@ -328,7 +399,7 @@ async def findroomschedules(
 async def filter_schedule_by_subject_code(
         search_data: ScheduleSearchSubjectCode = Depends(ScheduleSearchSubjectCode),
         db: Session = Depends(get_db),
-):
+                current_user: UserSchema = Depends(get_current_user)):
     filters = search_data.model_dump(exclude_defaults=True)
 
     # Extract the additional string filter and convert to uppercase

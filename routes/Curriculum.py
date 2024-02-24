@@ -94,7 +94,7 @@ async def store_bulk(request: BulkCurriculumSchema, db: Session = Depends(get_db
 async def get_curriculums(
         filter_data: CurriculumFilterSchema = Depends(CurriculumFilterSchema),
         db: Session = Depends(get_db),
-):
+                current_user: UserSchema = Depends(get_current_user)):
     filters = filter_data.model_dump(exclude_defaults=True)
 
     curriculums = db.query(Curriculum).filter_by(**filters).all()
@@ -118,7 +118,7 @@ async def get_curriculums(
 async def get_curriculumcodeyear(
         filter_data: CurriculumFilterAllSchema = Depends(CurriculumFilterAllSchema),
         db: Session = Depends(get_db),
-):
+                current_user: UserSchema = Depends(get_current_user)):
     filters = filter_data.model_dump(exclude_defaults=True)
 
     curriculums = db.query(Curriculum).filter_by(**filters).all()
@@ -142,7 +142,7 @@ async def get_curriculumcodeyear(
 async def filter_curriculums_by_subject_code(
     search_data: CurriculumSearchSubjectCode = Depends(CurriculumSearchSubjectCode),
     db: Session = Depends(get_db),
-):
+                current_user: UserSchema = Depends(get_current_user)):
     filters = search_data.model_dump(exclude_defaults=True)
 
     # Extract the additional string filter

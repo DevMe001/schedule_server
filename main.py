@@ -1,20 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import event
-
 import models
-from routes import (Course, YearLevel, Semester, Curriculum, Room, Class, Subject,
+from routes import (Course, YearLevel, Semester, Curriculum, Room, Class,
                     User, Login, Section, Manage_Curriculum, AcademicYear, FacultyInfo, Manage_Schedule, FacultyLoading)
 from config.database import engine
 
-
 app = FastAPI(
     title="Scheduling System",
-    version="4.0.0",
+    version="8.0.0",
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:8001", "http://localhost:8001", "http://172.20.10.4:8001", "*",'https://scheduler-x302.onrender.com'],
+    allow_origins=["http://127.0.0.1:8001", "http://localhost:8001", "http://172.20.10.4:8001", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -158,7 +156,6 @@ app.include_router(Semester.router)
 app.include_router(Curriculum.router)
 app.include_router(Room.router)
 app.include_router(Class.router)
-app.include_router(Subject.router)
 app.include_router(User.router)
 app.include_router(Login.router)
 app.include_router(Section.router)
@@ -167,6 +164,3 @@ app.include_router(AcademicYear.router)
 app.include_router(FacultyInfo.router)
 app.include_router(Manage_Schedule.router)
 app.include_router(FacultyLoading.router)
-
-
-# uvicorn main:app --reload

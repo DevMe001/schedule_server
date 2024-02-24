@@ -61,6 +61,11 @@ class RoomScheduleSchema(BaseModel):
     day: Optional[str]
     room_id: Optional[str]
 
+class roomchartSchema(BaseModel):
+    acadyear_id: Optional[str]
+    semester_id: Optional[str]
+
+
 class ScheduleSearchSubjectCode(BaseModel):
     acadyear_id: Optional[str]
     semester_id: Optional[str]

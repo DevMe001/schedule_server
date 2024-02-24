@@ -145,7 +145,6 @@ async def update(id: UUID4, request: YearLevelSchema, db: Session = Depends(get_
     else:
          raise HTTPException(status_code=404, detail=f"Year level does not exists!")
 
-
 @router.delete("/{id}")
 async def delete(id: UUID4, db: Session= Depends(get_db),current_user: UserSchema = Depends(get_current_user)):
     user = db.query(User).filter(User.email == current_user.email).first()

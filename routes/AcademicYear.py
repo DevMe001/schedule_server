@@ -39,7 +39,8 @@ async def index(page: Optional[int] = 1, limit: Optional[int] = 10, db: Session 
 
 @router.get("/getacadyr")
 # for querying all the data from Courses
-async def index(db: Session = Depends(get_db)):
+async def index(db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
     acads = db.query(AcademicYear).filter(AcademicYear.deleted_at == None).all()
     data = []
     if acads:
@@ -100,7 +101,8 @@ async def store(request: AcademicYearSchema, db: Session = Depends(get_db),
 
 @router.get("/{id}")
 # For ensuring the id when accessed
-async def show(id: UUID4, db: Session = Depends(get_db)):
+async def show(id: UUID4, db: Session = Depends(get_db),
+                current_user: UserSchema = Depends(get_current_user)):
     acad = db.query(AcademicYear).filter(AcademicYear.id == id,
                                                      AcademicYear.deleted_at == None).first()
 
