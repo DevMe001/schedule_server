@@ -239,6 +239,7 @@ async def bulk_store(request: BulkScheduleSchema, db: Session = Depends(get_db),
                 (existing_schedule for existing_schedule in request.schedules
                  if existing_schedule != schedule_data and
                  existing_schedule.day == schedule_data.day and
+                 existing_schedule.day == schedule_data.room_id and
                  ((existing_schedule.start_time <= schedule_data.start_time < existing_schedule.end_time) or
                   (existing_schedule.start_time < schedule_data.end_time <= existing_schedule.end_time) or
                   (schedule_data.start_time <= existing_schedule.start_time < schedule_data.end_time) or
